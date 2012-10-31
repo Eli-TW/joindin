@@ -1,5 +1,7 @@
 <?php
-
+/**
+ * @file
+ */
 // TODO check the database types against what we can be sent by joind.in
 /**
  * Defines the database schema for joindin. Deprecated as we're moving to
@@ -136,8 +138,10 @@ function joindin_schema() {
  */
 function joindin_install() {
   // Set default variables
-  variable_set('joindin_base_url', 'http://api.joindin');
+  variable_set('joindin_base_url', 'http://api.joind.in');
   variable_set('joindin_api_version', 'v2.1');
+
+  // todo: create vocabulary for joindin tags
 
   // During installation, the t() function is unavailable, so we use get_t()
   // to store the name of the translation function.
@@ -173,6 +177,10 @@ function joindin_install() {
  * Remove all variables and custom node types defined by this module
  */
 function joindin_uninstall() {
+  // Remove all variables
   variable_del('joindin_base_url');
   variable_del('joindin_api_version');
+
+  // Remove all node types
+  node_type_delete('joindin_event');
 }
