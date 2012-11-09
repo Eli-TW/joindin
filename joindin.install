@@ -11,6 +11,7 @@ function joindin_install() {
   // Set default variables
   variable_set('joindin_base_url', 'http://api.joind.in');
   variable_set('joindin_api_version', 'v2.1');
+  variable_set('joindin_auto_publish_comments', TRUE);
 
   // During installation, the t() function is unavailable, so we use get_t()
   // to store the name of the translation function.
@@ -76,10 +77,10 @@ function joindin_uninstall() {
   // Remove all variables
   variable_del('joindin_base_url');
   variable_del('joindin_api_version');
+  variable_del('joindin_publish_comments');
 
   // Remove all node types
-  // todo this doesn't delete the existing nodes, but you can't read their
-  // bodies and the comments remain
+  // todo this doesn't delete the existing nodes, but you can't read their bodies and the comments remain
   node_type_delete('joindin_event');
   node_type_delete('joindin_talk');
 
