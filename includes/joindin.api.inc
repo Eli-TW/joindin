@@ -211,6 +211,17 @@ function joindin_create_event_node($ji_event_id) {
     if (property_exists($ji_event, 'description')) {
       $event_node->body[$event_node->language][0]['value'] = $ji_event->description;
     }
+    // todo these mappings should be defined somewhere
+    _joindin_set_link_field($ji_event, $event_node, 'href', 'joindin_link_event');
+    _joindin_set_link_field($ji_event, $event_node, 'uri', 'joindin_link_event_uri');
+    _joindin_set_link_field($ji_event, $event_node, 'verbose_uri', 'joindin_link_event_verbose_uri');
+    _joindin_set_link_field($ji_event, $event_node, 'comments_uri', 'joindin_link_event_comments_uri');
+    _joindin_set_link_field($ji_event, $event_node, 'talk_uri', 'joindin_link_talks_uri');
+    _joindin_set_link_field($ji_event, $event_node, 'website_uri', 'joindin_link_event_website_uri');
+    // todo restore below when testable
+//    _joindin_set_link_field($ji_event, $event_node, 'humane_website_uri', 'joindin_link_event_h_website_uri');
+
+
     node_object_prepare($event_node);
     node_save($event_node);
     // todo should the event's host be the author?
@@ -226,7 +237,7 @@ function joindin_create_event_node($ji_event_id) {
       joindin_create_event_comments($event_node, $ji_event_id);
 
       // ..and get talks for the event
-      joindin_create_event_talks($event_node, $ji_event_id);
+      joindin_create_event_talks($ji_event_id);
     }
   }
   // only return the node if it saved properly
@@ -243,6 +254,40 @@ function joindin_create_event_node($ji_event_id) {
 }
 
 /**
+ * Sets the field on the node if the corresponding field exists on the joindin object
+ *
+ * @param $ji_object object retrieved from the joindin response
+ * @param $node node on which to set the field
+ * @param $ji_field_name field name on the joindin response
+ * @param $node_field_name field name on the node
+ */
+function _joindin_set_link_field($ji_object, $node, $ji_field_name, $node_field_name) {
+  if (is_object($ji_object)) {
+    if (property_exists($ji_object, $ji_field_name)) {
+      $node->$node_field_name = array(
+        LANGUAGE_NONE => array(
+          0 => array(
+            'url' => $ji_object->$ji_field_name,
+          ),
+        ),
+      );
+    }
+  }
+  elseif (is_array($ji_object)) {
+    if (array_key_exists($ji_field_name, $ji_object)) {
+      $node->$node_field_name = array(
+        LANGUAGE_NONE => array(
+          0 => array(
+            'url' => $ji_object[$ji_field_name],
+          ),
+        ),
+      );
+    }
+  }
+}
+
+
+/**
  *
  *
  * @param $event_node object Drupal node to which to add comments
@@ -254,22 +299,20 @@ function joindin_create_event_comments($event_node, $ji_event_id) {
   //  first get comments from the api..
   $ji_comments = joindin_get_ji_event_comments($ji_event_id);
   if ($ji_comments) {
-    $publish = variable_get('joindin_publish_comments', TRUE);
     // ..then for each retrieved..
     foreach ($ji_comments as $ji_comment) {
       // add it to the event
-      joindin_create_comment($event_node, $ji_comment, $publish);
+      joindin_create_comment($event_node, $ji_comment);
     }
   }
 }
 
 /**
- * Creates a drupal node for the given joindin event
+ * Creates a drupal nodes for all the talks at a given joindin event
  *
- * @param $event_node object Drupal node to which to add comments
  * @param $ji_event_id int ID of the event in joind.in
  */
-function joindin_create_event_talks($event_node, $ji_event_id) {
+function joindin_create_event_talks($ji_event_id) {
   // todo $event_node currently unused but will be when entity references are saved against the node
   // todo when the node stores its ID, either as an int or url it won't need to be passed separately
   $ji_talks = joindin_get_ji_event_talks($ji_event_id);
@@ -285,6 +328,15 @@ function joindin_create_event_talks($event_node, $ji_event_id) {
       if (array_key_exists('talk_description', $ji_talk)) {
         $talk_node->body[$talk_node->language][0]['value'] = $ji_talk['talk_description'];
       }
+      // todo these should be mapped somewhere
+      _joindin_set_link_field($ji_talk, $talk_node, 'slides_link', 'joindin_slides_link');
+      _joindin_set_link_field($ji_talk, $talk_node, 'uri', 'joindin_link_talk_uri');
+      _joindin_set_link_field($ji_talk, $talk_node, 'verbose_uri', 'joindin_link_talk_verbose_uri');
+      _joindin_set_link_field($ji_talk, $talk_node, 'website_uri', 'joindin_link_talk_website_uri');
+      _joindin_set_link_field($ji_talk, $talk_node, 'comments_uri', 'joindin_link_talk_comments_uri');
+      _joindin_set_link_field($ji_talk, $talk_node, 'verbose_comments_uri', 'joindin_link_talk_v_comments_uri');
+      _joindin_set_link_field($ji_talk, $talk_node, 'event_uri', 'joindin_link_event_uri');
+
       node_object_prepare($talk_node);
       node_save($talk_node);
       // if we saved the talk successfully..
@@ -312,7 +364,7 @@ function joindin_create_event_talks($event_node, $ji_event_id) {
  * @param $ji_comment array with ji comment response
  * @param $publish bool whether comment should be automatically published
  */
-function joindin_create_comment($node, $ji_comment, $publish) {
+function joindin_create_comment($node, $ji_comment) {
   // if they actually said anything..
   if (array_key_exists('comment', $ji_comment)) {
     //..convert to a Drupal comment on our new event node
@@ -320,6 +372,7 @@ function joindin_create_comment($node, $ji_comment, $publish) {
     $comment->nid = $node->nid;
     $comment->cid = 0;
     $comment->pid = 0;  // joind.in doesn't thread comments
+    $publish = variable_get('joindin_auto_publish_comments', TRUE);
     if ($publish) {
       $comment->status = COMMENT_PUBLISHED;
     }

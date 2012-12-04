@@ -20,3 +20,30 @@ function joindin_block_info() {
 
   return $blocks;
 }
+
+/**
+ * Implements hook_node_info().
+ */
+function joindin_node_info() {
+  return array(
+    'joindin_event' => array(
+      'name' => t('Joind.in event'),
+      'base' => 'joindin',
+      'description' => t('This node type represents an event in joind.in.'),
+//      'title_label' => t('Event'),
+    ),
+    'joindin_talk' => array(
+      'name' => t('Joind.in talk'),
+      'base' => 'joindin',
+      'description' => t('This node type represents a talk in joind.in.'),
+//      'title_label' => t('Talk'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form().
+ */
+function joindin_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}

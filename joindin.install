@@ -25,48 +25,93 @@ function joindin_install() {
   $vocab->module = 'joindin';
   taxonomy_vocabulary_save($vocab);
 
-  // Define our node types; we require node types for
-  //  Events
-  //  Talks
-  //  ...
+  // Add body field to our node types defined in hook_node_info()
+  node_types_rebuild();
+  $types = node_type_get_types();
+  //..add the body field for each
+  node_add_body_field($types['joindin_event'], 'Description');
+  node_add_body_field($types['joindin_talk'], 'Description');
 
-  // Define Event node type
-  $event_info = array(
-    'type' => 'joindin_event',
-    'name' => $t('Joind.in event'),
-    // 'base' tells Drupal the base string for hook functions.
-    'base' => 'joindin',
-    'description' => $t('This node type represents an event in joind.in.'),
-    'title_label' => $t('Event'),
+  // Set up our other fields on each node type
+  // All links will be similar fields so we will reuse our definition structures
+
+  // First define the name of our link fields for each node type
+  $link_fields = array(
+    'joindin_event' => array(
+      'joindin_link_event' => 'Event',
+      'joindin_link_event_uri' => 'Joind.in API Event',
+      'joindin_link_event_verbose_uri' => 'Joind.in API Event (verbose)',
+      'joindin_link_event_comments_uri' => 'Joind.in API Comments',
+      'joindin_link_talks_uri' => 'Joind.in API Talks',
+      'joindin_link_event_website_uri' => 'Joind.in Event Website',
+      'joindin_link_event_h_website_uri' => 'Joind.in Humane Website',
+    ),
+    'joindin_talk' => array(
+      'joindin_slides_link' => 'Slides',
+      'joindin_link_talk_uri' => 'Joind.in API Talk',
+      'joindin_link_talk_verbose_uri' => 'Joind.in API Talk (verbose)',
+      'joindin_link_talk_website_uri' => 'Joind.in Website',
+      'joindin_link_talk_comments_uri' => 'Joind.in API Comments',
+      'joindin_link_talk_v_comments_uri' => 'Joind.in API Comments (verbose)',
+      'joindin_link_event_uri' => 'Joind.in API Event',
+    ),
   );
 
-  // Convert to object and set defaults we haven't overridden in the  info
-  $event_type = node_type_set_defaults($event_info);
+  foreach ($link_fields as $node_type => $fields) {
+    foreach ($fields as $field_name => $field_label) {
+      // first define our field if not yet in the system..
+      $field = field_info_field($field_name);
+      if (empty($field)) {
+        $field = array(
+          'field_name' => $field_name,
+          'type' => 'link_field',
+          'entity_types' => array(
+            'node'
+          ),
+        );
+        field_create_field($field);
+      }
 
-  // Add a body field and set the body label immediately.
-  node_add_body_field($event_type, $t('Description'));
+      //..then create the instance bound to this node type
+      $instance = field_info_instance('node', $field_name, $node_type);
 
-  // Save the content type
-  node_type_save($event_type);
+      if (empty($instance)) {
+        $instance = array(
+          'label' => $field_label,
+          'field_name' => $field_name,
+          'widget' => array('type' => 'link_field'),
+          'settings' => array(
+            'validate_url' => 1,
+            'url' => 0,
+            'title_maxlength' => 255,
+            'enable_tokens' => 1,
+            'display' => array(
+              'url_cutoff' => 80,
+            ),
+            'attributes' => array(
+              'target' => 'default',
+              'configurable_title' => 0,
+            ),
+          ),
+          'display' => array(
+            'default' => array(
+              'label' => 'above',
+              'type' => 'link_default',
+            ),
+            'teaser' => array(
+              'type' => 'hidden',
+              'label' => 'above',
+            ),
+          ),
+          'entity_type' => 'node',
+          'bundle' => $node_type,
+        );
+        field_create_instance($instance);
+      }
+    }
+  }
 
-  // Define Talk node type
-  $talk_info = array(
-    'type' => 'joindin_talk',
-    'name' => $t('Joind.in talk'),
-    // 'base' tells Drupal the base string for hook functions.
-    'base' => 'joindin',
-    'description' => $t('This node type represents an event in joind.in.'),
-    'title_label' => $t('Event'),
-  );
 
-  // Convert to object and set defaults we haven't overridden in the info
-  $talk_type = node_type_set_defaults($talk_info);
-
-  // Add a body field and set the body label immediately.
-  node_add_body_field($talk_type, $t('Description'));
-
-  // Save the content type
-  node_type_save($talk_type);
 }
 
 /**
@@ -78,11 +123,6 @@ function joindin_uninstall() {
   variable_del('joindin_base_url');
   variable_del('joindin_api_version');
   variable_del('joindin_publish_comments');
-
-  // Remove all node types
-  // todo this doesn't delete the existing nodes, but you can't read their bodies and the comments remain
-  node_type_delete('joindin_event');
-  node_type_delete('joindin_talk');
 
   // Remove vocab
   $vocab = taxonomy_vocabulary_machine_name_load('joindin_tags');
