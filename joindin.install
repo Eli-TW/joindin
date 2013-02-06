@@ -1,14 +1,20 @@
 <?php
 /**
  * @file
+ * Install file for the joindin module
+ *
+ * Sets default variables
+ * Creates talk and event node types
+ * Creates the vocabulary to add the joind.in tags
  */
 
 /**
  * Implements hook_install().
+ *
  * Sets default values for joindin variables and defines custom node types
  */
 function joindin_install() {
-  // Set default variables
+  // Set default variables.
   variable_set('joindin_base_url', 'http://api.joind.in');
   variable_set('joindin_api_version', 'v2.1');
   variable_set('joindin_auto_publish_comments', TRUE);
@@ -17,7 +23,7 @@ function joindin_install() {
   // to store the name of the translation function.
   $t = get_t();
 
-  // Create the vocabulary for joind.in tags
+  // Create the vocabulary for joind.in tags.
   $vocab = new stdClass();
   $vocab->name = $t('Joind.in Tags');
   $vocab->machine_name = 'joindin_tags';
@@ -25,17 +31,16 @@ function joindin_install() {
   $vocab->module = 'joindin';
   taxonomy_vocabulary_save($vocab);
 
-  // Add body field to our node types defined in hook_node_info()
+  // Add body field to our node types defined in hook_node_info().
   node_types_rebuild();
   $types = node_type_get_types();
-  //..add the body field for each
+  // ..add the body field for each.
   node_add_body_field($types['joindin_event'], 'Description');
   node_add_body_field($types['joindin_talk'], 'Description');
 
   // Set up our other fields on each node type
-  // All links will be similar fields so we will reuse our definition structures
-
-  // First define the name of our link fields for each node type
+  // All links will be similar fields so reuse our definition structures.
+  // First define the name of our link fields for each node type.
   $link_fields = array(
     'joindin_event' => array(
       'joindin_link_event' => 'Event',
@@ -59,20 +64,20 @@ function joindin_install() {
 
   foreach ($link_fields as $node_type => $fields) {
     foreach ($fields as $field_name => $field_label) {
-      // first define our field if not yet in the system..
+      // First define our field if not yet in the system..
       $field = field_info_field($field_name);
       if (empty($field)) {
         $field = array(
           'field_name' => $field_name,
           'type' => 'link_field',
           'entity_types' => array(
-            'node'
+            'node',
           ),
         );
         field_create_field($field);
       }
 
-      //..then create the instance bound to this node type
+      // ..then create the instance bound to this node type.
       $instance = field_info_instance('node', $field_name, $node_type);
 
       if (empty($instance)) {
@@ -110,21 +115,20 @@ function joindin_install() {
       }
     }
   }
-
-
 }
 
 /**
  * Implements hook_uninstall().
- * Remove all variables and custom node types defined by this module
+ *
+ * Remove all variables and custom node types defined by this module.
  */
 function joindin_uninstall() {
-  // Remove all variables
+  // Remove all variables.
   variable_del('joindin_base_url');
   variable_del('joindin_api_version');
   variable_del('joindin_publish_comments');
 
-  // Remove vocab
+  // Remove vocab.
   $vocab = taxonomy_vocabulary_machine_name_load('joindin_tags');
   taxonomy_vocabulary_delete($vocab->vid);
 }

@@ -1,10 +1,20 @@
 <?php
-// TODO: this isn't always required but is here to ease initial testing
-require_once('./' . drupal_get_path('module', 'joindin') . '/includes/joindin.api.inc');
+
+/**
+ * @file
+ * The module file for joind.in integration
+ *
+ * This module allows Drupal to consume Joind.in's API, and provides node types
+ * to represent joind.in's data
+ */
+
+// TODO: this isn't always required but is here to ease initial testing.
+require_once './' . drupal_get_path('module', 'joindin') . '/includes/joindin.api.inc';
 
 /**
  * Implements hook_block_info().
- * Defines blocks to hold the joind.in
+ *
+ * Defines blocks to hold the joind.in widgets
  */
 function joindin_block_info() {
   /*
@@ -30,13 +40,13 @@ function joindin_node_info() {
       'name' => t('Joind.in event'),
       'base' => 'joindin',
       'description' => t('This node type represents an event in joind.in.'),
-//      'title_label' => t('Event'),
+      // 'title_label' => t('Event'),
     ),
     'joindin_talk' => array(
       'name' => t('Joind.in talk'),
       'base' => 'joindin',
       'description' => t('This node type represents a talk in joind.in.'),
-//      'title_label' => t('Talk'),
+      // 'title_label' => t('Talk'),
     ),
   );
 }
