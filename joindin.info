@@ -3,5 +3,6 @@ description = A module to integrate a Drupal site with joind.in
 ;package = No package yet defined
 core = 7.x
 ; todo: do we still need entity?
-dependencies[] = entity
+dependencies[] = comment
 dependencies[] = link
+dependencies[] = taxonomy
